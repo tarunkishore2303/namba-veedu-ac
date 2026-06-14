@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>நம்ம வீடு · AC</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0e14;--surface:#14171f;--surface2:#1c2030;--border:#252a3a;
+  --accent:#3d8ef7;--accent-dim:rgba(61,142,247,0.15);
+  --cold:#4fc3f7;--heat:#ff7043;--fan:#81c784;--auto:#ba68c8;--dry:#ffb74d;
+  --text:#e8eaf2;--muted:#6b7280;--danger:#ef5350;--success:#4caf50;
+  --r:14px;--t:0.18s ease;
+}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px 64px}
+
+header{width:100%;max-width:640px;display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.logo{width:38px;height:38px;background:var(--accent);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+header h1{font-size:18px;font-weight:600;letter-spacing:-.3px}
+header p{font-size:11px;color:var(--muted);margin-top:2px}
+.badge{margin-left:auto;font-size:11px;font-family:monospace;padding:3px 10px;
+  border-radius:20px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.badge.on{border-color:var(--success);color:var(--success)}
+.badge.err{border-color:var(--danger);color:var(--danger)}
+
+.card{width:100%;max-width:640px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:22px 24px;margin-bottom:14px}
+.card-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px}
+
+/* ── login screen ── */
+#login-screen{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:640px}
+.login-card{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:32px 28px;text-align:center}
+.login-card .big-icon{font-size:48px;margin-bottom:16px}
+.login-card h2{font-size:20px;font-weight:600;margin-bottom:8px}
+.login-card p{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:24px}
+.login-btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);
+  color:#fff;border:none;border-radius:10px;padding:13px 24px;font-size:14px;
+  font-weight:600;cursor:pointer;text-decoration:none;transition:opacity var(--t)}
+.login-btn:hover{opacity:.85}
+.login-btn .samsung-icon{font-size:18px}
+.login-note{margin-top:14px;font-size:11px;color:var(--muted)}
+
+/* ── device row ── */
+#device-row{display:none;width:100%;max-width:640px;gap:8px;align-items:center;margin-bottom:14px}
+#device-row label{font-size:12px;color:var(--muted);white-space:nowrap}
+select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:13px;padding:9px 12px;outline:none;
+  transition:border-color var(--t);font-family:inherit;flex:1}
+select:focus{border-color:var(--accent)}
+#dev-sel{flex:1}
+
+button{background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;
+  transition:opacity var(--t);font-family:inherit}
+button:hover{opacity:.85}
+button:active{opacity:.7}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+button.dghost{background:var(--surface2);color:var(--danger);border:1px solid var(--danger)}
+
+/* ── status ── */
+.status-strip{display:flex;align-items:center;gap:16px}
+.pwr{width:56px;height:56px;border-radius:50%;background:var(--surface2);
+  border:2px solid var(--border);font-size:20px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;transition:all var(--t);flex-shrink:0;user-select:none}
+.pwr.on{background:var(--accent-dim);border-color:var(--accent);box-shadow:0 0 14px rgba(61,142,247,.25)}
+.pwr:hover{border-color:var(--accent)}
+.stat-temp{font-size:34px;font-weight:300;letter-spacing:-1px;line-height:1}
+.stat-temp sup{font-size:14px;font-weight:400;color:var(--muted)}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.spacer{flex:1}
+.hum-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;
+  padding:5px 12px;font-size:12px;color:var(--muted)}
+
+/* ── temp ── */
+.dial-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.dial-val{font-size:52px;font-weight:300;letter-spacing:-2px;color:var(--cold)}
+.dial-val.heat{color:var(--heat)}
+.dial-controls{display:flex;align-items:center;gap:18px}
+.dial-btn{width:44px;height:44px;border-radius:50%;background:var(--surface2);
+  border:1px solid var(--border);font-size:22px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;transition:all var(--t);color:var(--text);
+  font-weight:300;user-select:none}
+.dial-btn:hover{background:var(--accent-dim);border-color:var(--accent)}
+.dial-hint{font-size:11px;color:var(--muted)}
+
+/* ── mode ── */
+.mode-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.mode-pill{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;
+  border-radius:10px;border:1px solid var(--border);background:var(--surface2);
+  cursor:pointer;transition:all var(--t);font-size:11px;color:var(--muted);
+  font-weight:500;user-select:none}
+.mode-pill .ic{font-size:18px}
+.mode-pill:hover{border-color:var(--accent);color:var(--text)}
+.mode-pill.act-cool{border-color:var(--cold);background:rgba(79,195,247,.1);color:var(--cold)}
+.mode-pill.act-heat{border-color:var(--heat);background:rgba(255,112,67,.1);color:var(--heat)}
+.mode-pill.act-wind{border-color:var(--fan);background:rgba(129,199,132,.1);color:var(--fan)}
+.mode-pill.act-auto{border-color:var(--auto);background:rgba(186,104,200,.1);color:var(--auto)}
+.mode-pill.act-dry{border-color:var(--dry);background:rgba(255,183,77,.1);color:var(--dry)}
+
+/* ── fan ── */
+.fan-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fan-pill{padding:9px 4px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface2);cursor:pointer;transition:all var(--t);font-size:12px;
+  color:var(--muted);font-weight:500;text-align:center;user-select:none}
+.fan-pill:hover{border-color:var(--accent);color:var(--text)}
+.fan-pill.act{border-color:var(--fan);background:rgba(129,199,132,.1);color:var(--fan)}
+
+/* ── refresh row ── */
+.refresh-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.refresh-row .card-label{margin-bottom:0}
+.upd-time{font-size:10px;color:var(--muted);font-family:monospace}
+
+/* ── toast ── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(70px);
+  background:var(--surface2);border:1px solid var(--border);border-radius:30px;
+  padding:9px 18px;font-size:13px;color:var(--text);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:100;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.err{border-color:var(--danger);color:var(--danger)}
+
+.spin{display:inline-block;width:12px;height:12px;border:2px solid transparent;
+  border-top-color:currentColor;border-radius:50%;animation:sp .6s linear infinite;
+  vertical-align:middle;margin-right:5px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+#control-wrap{display:none;width:100%;max-width:640px;flex-direction:column}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">❄️</div>
+  <div>
+    <h1>நம்ம வீடு</h1>
+    <p>Home AC Controller</p>
+  </div>
+  <div class="badge" id="badge">loading…</div>
+</header>
+
+<!-- Login screen -->
+<div id="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="big-icon">🏠</div>
+    <h2>Welcome home</h2>
+    <p>Sign in with your Samsung account to control the AC. You'll only need to do this once — stays logged in automatically.</p>
+    <a class="login-btn" href="/auth/login">
+      <span class="samsung-icon">🔐</span>
+      Login with Samsung
+    </a>
+    <div class="login-note">Secured via SmartThings OAuth · No passwords stored here</div>
+  </div>
+</div>
+
+<!-- Device row -->
+<div id="device-row">
+  <label>Device</label>
+  <select id="dev-sel" onchange="selectDevice()"></select>
+  <button class="ghost" onclick="loadStatus()">↻</button>
+  <button class="dghost" onclick="logout()">Logout</button>
+</div>
+
+<!-- Controls -->
+<div id="control-wrap">
+  <div class="card">
+    <div class="refresh-row">
+      <div class="card-label">Live status</div>
+      <div class="upd-time" id="upd-time">—</div>
+    </div>
+    <div class="status-strip">
+      <div class="pwr" id="pwr-btn" onclick="togglePower()">⏻</div>
+      <div>
+        <div class="stat-temp" id="cur-temp">—<sup>°C</sup></div>
+        <div class="stat-sub" id="stat-sub">Loading…</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="hum-pill" id="hum">💧 —</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Temperature</div>
+    <div class="dial-wrap">
+      <div class="dial-val" id="tgt-temp">24°C</div>
+      <div class="dial-controls">
+        <div class="dial-btn" onclick="changeTemp(-1)">−</div>
+        <div class="dial-hint">target</div>
+        <div class="dial-btn" onclick="changeTemp(+1)">+</div>
+      </div>
+      <div class="dial-hint">Range: 16°C – 30°C</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Mode</div>
+    <div class="mode-grid">
+      <div class="mode-pill" data-mode="cool" onclick="setMode('cool')"><span class="ic">❄️</span>Cool</div>
+      <div class="mode-pill" data-mode="heat" onclick="setMode('heat')"><span class="ic">🔥</span>Heat</div>
+      <div class="mode-pill" data-mode="auto" onclick="setMode('auto')"><span class="ic">🔄</span>Auto</div>
+      <div class="mode-pill" data-mode="dry"  onclick="setMode('dry')"><span class="ic">💧</span>Dry</div>
+      <div class="mode-pill" data-mode="wind" onclick="setMode('wind')"><span class="ic">🌬️</span>Fan</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Fan speed</div>
+    <div class="fan-grid">
+      <div class="fan-pill" data-fan="auto"   onclick="setFan('auto')">Auto</div>
+      <div class="fan-pill" data-fan="low"    onclick="setFan('low')">Low</div>
+      <div class="fan-pill" data-fan="medium" onclick="setFan('medium')">Medium</div>
+      <div class="fan-pill" data-fan="high"   onclick="setFan('high')">High</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let deviceId='', targetTemp=24, curSwitch='off', pollTimer;
+
+// ── init ──────────────────────────────────────────────
+window.onload = async () => {
+  // show error from OAuth redirect if any
+  const params = new URLSearchParams(location.search);
+  if (params.get('error')) toast('Login error: ' + params.get('error'), true);
+  history.replaceState({}, '', '/');
+
+  const res = await fetch('/api/auth/status');
+  const { loggedIn } = await res.json();
+  if (loggedIn) {
+    setBadge('on', 'connected');
+    await loadDevices();
+  } else {
+    setBadge('', 'not logged in');
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+};
+
+function logout() { window.location.href = '/auth/logout'; }
+
+// ── devices ───────────────────────────────────────────
+async function loadDevices() {
+  try {
+    const acs = await apiFetch('/api/devices');
+    if (!acs.length) { toast('No AC found in SmartThings', true); return; }
+    const sel = document.getElementById('dev-sel');
+    sel.innerHTML = acs.map(d =>
+      `<option value="${d.deviceId}">${d.label || d.name || d.deviceId}</option>`
+    ).join('');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('device-row').style.display = 'flex';
+    document.getElementById('control-wrap').style.display = 'flex';
+    deviceId = acs[0].deviceId;
+    await loadStatus();
+    pollTimer = setInterval(loadStatus, 15000);
+  } catch(e) {
+    if (e.message === 'not_logged_in') {
+      document.getElementById('login-screen').style.display = 'flex';
+      setBadge('', 'not logged in');
+    } else {
+      toast(e.message, true);
+    }
+  }
+}
+
+function selectDevice() {
+  deviceId = document.getElementById('dev-sel').value;
+  loadStatus();
+}
+
+// ── status ────────────────────────────────────────────
+async function loadStatus() {
+  if (!deviceId) return;
+  try {
+    const s = await apiFetch(`/api/devices/${deviceId}/status`);
+    curSwitch = s.switch || 'off';
+    if (s.targetTemp != null) targetTemp = s.targetTemp;
+
+    document.getElementById('pwr-btn').classList.toggle('on', curSwitch === 'on');
+    document.getElementById('cur-temp').innerHTML =
+      s.currentTemp != null ? `${s.currentTemp.toFixed(1)}<sup>°C</sup>` : `—<sup>°C</sup>`;
+    document.getElementById('tgt-temp').textContent = `${targetTemp}°C`;
+    document.getElementById('tgt-temp').className = 'dial-val' + (s.mode === 'heat' ? ' heat' : '');
+
+    const mn = { cool:'Cooling', heat:'Heating', auto:'Auto', dry:'Drying', wind:'Fan only' };
+    document.getElementById('stat-sub').textContent = curSwitch === 'on'
+      ? `${mn[s.mode] || s.mode || 'On'} · Target ${targetTemp}°C`
+      : 'Standby';
+    document.getElementById('hum').textContent = s.humidity != null ? `💧 ${s.humidity}%` : '💧 —';
+
+    document.querySelectorAll('.mode-pill').forEach(p => {
+      p.className = 'mode-pill';
+      if (p.dataset.mode === s.mode) p.classList.add(`act-${s.mode}`);
+    });
+    document.querySelectorAll('.fan-pill').forEach(p => {
+      p.classList.toggle('act', p.dataset.fan === s.fanMode);
+    });
+    document.getElementById('upd-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    setBadge('on', 'connected');
+  } catch(e) {
+    setBadge('err', 'error');
+    toast('Status error: ' + e.message, true);
+  }
+}
+
+// ── controls ──────────────────────────────────────────
+async function togglePower() {
+  const next = curSwitch === 'on' ? 'off' : 'on';
+  await cmd('switch', next, []);
+  curSwitch = next;
+  document.getElementById('pwr-btn').classList.toggle('on', next === 'on');
+  document.getElementById('stat-sub').textContent = next === 'on' ? 'Turning on…' : 'Standby';
+  toast(next === 'on' ? '✅ AC turned on' : '⏻ AC turned off');
+  setTimeout(loadStatus, 2500);
+}
+
+async function changeTemp(d) {
+  const n = Math.min(30, Math.max(16, targetTemp + d));
+  if (n === targetTemp) return;
+  targetTemp = n;
+  document.getElementById('tgt-temp').textContent = `${targetTemp}°C`;
+  await cmd('thermostatCoolingSetpoint', 'setCoolingSetpoint', [targetTemp]);
+  toast(`🌡 Set to ${targetTemp}°C`);
+  setTimeout(loadStatus, 2500);
+}
+
+async function setMode(mode) {
+  await cmd('airConditionerMode', 'setAirConditionerMode', [mode]);
+  document.querySelectorAll('.mode-pill').forEach(p => {
+    p.className = 'mode-pill';
+    if (p.dataset.mode === mode) p.classList.add(`act-${mode}`);
+  });
+  const L = { cool:'❄️ Cool', heat:'🔥 Heat', auto:'🔄 Auto', dry:'💧 Dry', wind:'🌬️ Fan' };
+  toast(L[mode] || mode);
+  setTimeout(loadStatus, 2500);
+}
+
+async function setFan(speed) {
+  await cmd('airConditionerFanMode', 'setFanMode', [speed]);
+  document.querySelectorAll('.fan-pill').forEach(p => {
+    p.classList.toggle('act', p.dataset.fan === speed);
+  });
+  toast(`🌀 Fan: ${speed}`);
+  setTimeout(loadStatus, 2500);
+}
+
+async function cmd(capability, command, args) {
+  try {
+    await apiFetch(`/api/devices/${deviceId}/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capability, command, args }),
+    });
+  } catch(e) { toast('Command failed: ' + e.message, true); throw e; }
+}
+
+// ── helpers ───────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (res.status === 401) throw new Error('not_logged_in');
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+let toastT;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.className = ''; }, 3000);
+}
+function setBadge(cls, txt) {
+  const b = document.getElementById('badge');
+  b.className = 'badge' + (cls ? ` ${cls}` : '');
+  b.textContent = txt;
+}
+</script>
+</body>
+</html>
